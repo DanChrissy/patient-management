@@ -1,9 +1,12 @@
 import { FunctionComponent } from 'react';
 import styled from 'styled-components';
+import Login from './Login';
+import Register from './Register';
 
 const Auth : FunctionComponent = () => {
     return (
-        <div/>
+        // <Login/>
+        <Register/>
     )
 }
 
