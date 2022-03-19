@@ -1,7 +1,7 @@
 import { FunctionComponent, ReactNode, Suspense, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Parse from 'parse';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, HashRouter } from 'react-router-dom';
 import { DefinedRoute, routes, patientRoutes, doctorRoutes } from '.';
 import DefaultLayout from '../layouts/DefaultLayout';
 import Patient from '../pages/Patient';
@@ -22,7 +22,7 @@ const Router : FunctionComponent = () => {
     console.log('IsAuthenticated: ', isUserAuthenticated);
 
     return (
-        <BrowserRouter>
+        <HashRouter>
             <DefaultLayout>
                 <Suspense fallback={<div/>}>
                     <Routes>
@@ -47,7 +47,7 @@ const Router : FunctionComponent = () => {
                     </Routes>
                 </Suspense>
             </DefaultLayout>
-        </BrowserRouter>
+        </HashRouter>
     )
 }
 
