@@ -4,16 +4,20 @@ import InputField, { InputProps } from '../InputField';
 
 interface RecordProps extends InputProps {
     title: string,
-    customStyleProps?: CSSProperties
+    customStyleProps?: CSSProperties,
+    customField?: any,
 }
 
-const Record : FunctionComponent <RecordProps> = ({ title, customStyleProps, ...props}) => {
+const Record : FunctionComponent <RecordProps> = ({ title, customStyleProps, customField, ...props}) => {
     return (
         <RecordContainer style={customStyleProps}>
             <p>{title}</p>
-            <InputField
-                {...props}
-            />
+            {customField ||
+                <InputField
+                    {...props}
+                />
+            }
+            
         </RecordContainer>
     )
 }

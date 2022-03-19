@@ -25,8 +25,15 @@ export const authSlice = createSlice({
     }
 })
 
-export const getToken = (state: AuthState) => state.token;
-export const getUser = (state: AuthState) => state.user;
+export const isAuthenticated = ({auth: state}:  any | AuthState) => {
+    if ((Object.keys(state?.user || {}) || []).length > 0) {
+        return true;
+    }
+    return false;
+}
+
+export const getToken = ({auth: state}: any | AuthState) => state.token;
+export const getUser = ({auth: state} : any | AuthState) => state.user;
 
 export const { setToken, setUser, resetUser } = authSlice.actions;
 

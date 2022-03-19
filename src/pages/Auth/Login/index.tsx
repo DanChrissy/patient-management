@@ -1,10 +1,18 @@
-import { ChangeEvent, CSSProperties, FunctionComponent, useState } from 'react';
+import { ChangeEvent, CSSProperties, FunctionComponent, useEffect, useState } from 'react';
+import { batch, useDispatch, useSelector } from 'react-redux';
+import Parse, { Role } from 'parse';
+import { Navigate, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Button from '../../../components/Button';
 import InputField, { StyledTypes } from '../../../components/InputField';
 import Record from '../../../components/Record';
+import { validateEmail } from '../../../helpers/validators';
+import { getUser, setUser } from '../../../store/authReducer';
 
 const Login : FunctionComponent = () => {
+    const user = useSelector(getUser);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const [values, setValues] = useState({
         email: '',
         password: ''
@@ -20,8 +28,80 @@ const Login : FunctionComponent = () => {
         })
     }
 
-    function handleLoginUser() {
-        // Login user by setting token redirect to welcom page
+    function validateValues() {
+        let isValid = true;
+        let validateErrors : string[] = [];
+        for(const [key, value] of Object.entries(values)) {
+            if (key === 'email') {
+                if (!value) {
+                    validateErrors.push(key);
+                } else {
+                    const isEmailValid = validateEmail(value);
+                    if (!isEmailValid) {
+                        validateErrors.push(key);
+                    }
+                }
+            } else {
+                if (!value) {
+                    validateErrors.push(key);
+                }
+            }
+        }
+
+        if (validateErrors.length > 0) {
+            isValid = false;
+        }
+
+        setErrors(validateErrors);
+
+
+        return isValid;
+    }
+
+    async function handleLoginUser() {
+        const valid = validateValues();
+        if (!valid) { return; }
+
+        try {
+            const loggedInUser: Parse.User = await Parse.User.logIn(values.email, values.password);
+            const currentUser = await Parse.User.current();
+            console.log('Success logged in:', currentUser, loggedInUser);
+            if (loggedInUser === currentUser) {
+
+                let updatedUserDetails : any = {
+                    id: currentUser.id,
+                    ...currentUser.attributes,
+                    role: {
+                        id: currentUser.get('role').id,
+                    },
+                }
+
+                const roleQuery: Parse.Query = new Parse.Query('_Role');
+                await roleQuery.get(currentUser.get('role').id)
+                    .then(res => {
+                        const userRole = res.get('name');
+                        updatedUserDetails = {
+                            ...updatedUserDetails,
+                            role: {
+                                ...updatedUserDetails.role,
+                                name: userRole
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.log('User role could not be found: ', err);
+                    })
+
+
+                delete updatedUserDetails.sessionToken;
+                delete updatedUserDetails.ACL;
+                
+                dispatch(setUser(updatedUserDetails));
+            }
+        } catch (err) {
+            console.log('Login failed:', err);
+            alert('Invalid login. Please try again');
+        }
 
     }
 
@@ -35,6 +115,10 @@ const Login : FunctionComponent = () => {
                     customStyleProps={{ ...loginRecordStyles }}
                     name="email"
                     onChange={handleOnChangeValue}
+                    error={{
+                        hasError: errors.includes('email'),
+                        errorMsg: 'Please enter valid email'
+                    }}
                 />
                 
                 <Record
@@ -44,6 +128,10 @@ const Login : FunctionComponent = () => {
                     customStyleProps={{ ...loginRecordStyles, marginTop: 'var(--space-12'}}
                     name="password"
                     onChange={handleOnChangeValue}
+                    error={{
+                        hasError: errors.includes('password'),
+                        errorMsg: 'Please enter a password'
+                    }}
                 />
 
                 <Button
@@ -70,8 +158,8 @@ const loginRecordStyles : CSSProperties = {
 }
 
 const LoginWrapper = styled.div`
-    height: 100vh;
-    width: 100vw;
+    height: max-content;
+    width: 100%;
 
     margin: 0;
     padding: 0;

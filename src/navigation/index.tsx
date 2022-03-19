@@ -1,46 +1,85 @@
 import { FunctionComponent, lazy, ReactNode } from 'react';
+import { useSelector } from 'react-redux';
+import { Navigate, Route } from 'react-router-dom';
+import { getUser, isAuthenticated } from '../store/authReducer';
 
 const Auth = lazy(() => import('../pages/Auth'));
+const Login = lazy(() => import('../pages/Auth/Login'));
+const Register = lazy(() => import('../pages/Auth/Register'));
+
 const Patient = lazy(() => import('../pages/Patient'));
+const Overview = lazy(() => import('../pages/Overview'));
 const Doctor = lazy(() => import('../pages/Doctor'));
 const Appointment = lazy(() => import('../pages/Appointment'));
 
 export interface DefinedRoute {
     path: string,
+    name?: string,
     element: ReactNode,
-    caseSensitivity?: boolean
+    caseSensitivity?: boolean,
+    requireAuth?: boolean,
+    children?: DefinedRoute[]
+}
+
+const PublicRoute = ({ element }: {element: any} ) => {
+    const authenticated = useSelector(isAuthenticated);
+    return authenticated ? <Navigate to="/" /> : element;
+}
+
+const PrivateRoute = ({ element }: {element: any}) => {
+    const authenticated = useSelector(isAuthenticated);
+    return !authenticated ? <Navigate to="/auth/login" replace/> : element;
 }
 
 const authRoute = {
     path: '/auth',
-    element: <Auth/>,
-    caseSensitivity: true
+    element: <PublicRoute element={<Auth/>}/>,
+    children: [
+        {
+            path: '',
+            element: <Login/>,
+        },
+        {
+            path: 'login',
+            element: <Login/>,
+        },
+        {
+            path: 'register',
+            element: <Register/>,
+        }
+    ]
 };
 
 const welcomRoute = {
     path: '/',
-    element: <div>Overview</div>,
-    caseSensitivity: true
+    element: <PrivateRoute element={<Overview/>}/>,
+    requireAuth: true,
 }
 
 const patientRoute = {
     path: '/patient',
-    element: <Patient/>,
-    caseSensitivity: true
+    name: 'Patient Record',
+    element: <PrivateRoute element={<Patient/>}/> ,
+    caseSensitivity: true,
+    requireAuth: true,
 };
 
 const doctorRoute = {
     path: '/doctor',
-    element: <Doctor/>,
-    caseSensitivity: true
+    name: 'Doctor Appointments',
+    element: <PrivateRoute element={ <Doctor/>}/>,
+    caseSensitivity: true,
+    requireAuth: true,
 };
 
 const appointmentRoute = {
-    path: '/auth',
-    element: <Appointment/>,
-    caseSensitivity: true
+    path: '/appointment',
+    name: 'Patient Appointments',
+    element: <PrivateRoute element={<Appointment/>}/>,
+    caseSensitivity: true,
+    requireAuth: true,
 };
 
-const routes = [authRoute, welcomRoute, patientRoute, doctorRoute, appointmentRoute];
-
-export default routes;
+export const routes = [authRoute, welcomRoute];
+export const patientRoutes = [patientRoute, appointmentRoute];
+export const doctorRoutes = [doctorRoute];
